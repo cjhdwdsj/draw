@@ -1,0 +1,13 @@
+{
+  "name": "pes-mobile-draw",
+  "version": "1.0.0",
+  "description": "实况足球手机版球员抽卡模拟器 + 球员数据 REST API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=14"
+  },
+  "license": "MIT"
+}
