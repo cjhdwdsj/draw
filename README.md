@@ -13,6 +13,8 @@
 | `index.html` | 主页面，包含全部 UI、CSS 样式与内联 JavaScript 逻辑 （约 3985 行） |
 | `card-system.js` | 独立的抽卡系统 JS 类（`PESCardSystem`），可复用于其他项目 |
 | `players_data_complete.json` | 球员数据库，包含卡池配置与球员属性 |
+| `server.js` | Node.js REST API 服务器（无需安装依赖） |
+| `package.json` | 项目元数据与 `npm start` 启动脚本 |
 | `bgm/` | 背景音乐文件夹（24 首 BGM） |
 | `鼓掌欢呼声音效.mp3` | 抽卡成功时的欢呼音效 |
 
@@ -40,12 +42,58 @@
 
 ## 运行方式
 
-直接用浏览器打开 `index.html` 即可（建议使用本地 HTTP 服务器以支持 JSON 数据加载）：
+### 方式一：带 REST API 的 Node.js 服务器（推荐）
+
+```bash
+node server.js
+# 或
+npm start
+# 然后访问 http://localhost:3000
+```
+
+### 方式二：纯静态文件（仅前端）
 
 ```bash
 # Python 3
 python -m http.server 8080
 # 然后访问 http://localhost:8080
+```
+
+## 球员数据 REST API
+
+服务器启动后（默认端口 `3000`），可通过以下接口获取与更新球员数据：
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/api/players` | 获取所有球员列表 |
+| `GET` | `/api/players/:index` | 获取指定索引的球员 |
+| `POST` | `/api/players` | 新增球员 |
+| `PUT` | `/api/players/:index` | 更新指定球员（部分更新，仅传需修改的字段） |
+| `DELETE` | `/api/players/:index` | 删除指定球员 |
+
+所有接口返回 JSON，响应头包含 CORS 支持，可跨域访问。
+
+### 示例
+
+```bash
+# 获取所有球员
+curl http://localhost:3000/api/players
+
+# 获取第 0 名球员（梅西）
+curl http://localhost:3000/api/players/0
+
+# 新增球员
+curl -X POST http://localhost:3000/api/players \
+  -H 'Content-Type: application/json' \
+  -d '{"姓名":"新球员","稀有度":"精选","总评":90,"位置":"CF","国籍":"中国","俱乐部":"示例队","能力值":{"进攻":90,"防守":40,"身体":80,"速度":85,"传球":75,"运球":82}}'
+
+# 更新第 0 名球员的总评
+curl -X PUT http://localhost:3000/api/players/0 \
+  -H 'Content-Type: application/json' \
+  -d '{"总评":99}'
+
+# 删除最后一名球员（假设共 47 名，索引为 46）
+curl -X DELETE http://localhost:3000/api/players/46
 ```
 
 ## 技术栈
@@ -54,6 +102,7 @@ python -m http.server 8080
 - 响应式布局，针对移动端横屏优化
 - Web Audio API 用于音效播放
 - CSS 动画与 `@keyframes` 实现抽卡特效
+- Node.js 内置模块（`http`、`fs`、`path`）实现 REST API 服务器，**无需安装任何 npm 依赖**
 
 ## 数据说明
 
