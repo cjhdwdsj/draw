@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>球员数据管理工具</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Microsoft YaHei", sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    h1 { color: #4fc3f7; text-align: center; padding: 20px 0 8px; font-size: 1.6rem; }
+    .subtitle { text-align: center; color: #90a4ae; margin-bottom: 28px; font-size: 0.9rem; }
+
+    /* --- Data source cards --- */
+    .sources { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 32px; justify-content: center; }
+    .source-card {
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 10px;
+      padding: 16px 20px;
+      width: 280px;
+    }
+    .source-card h3 { color: #4fc3f7; margin-bottom: 6px; font-size: 1rem; }
+    .source-card p { color: #90a4ae; font-size: 0.82rem; line-height: 1.5; margin-bottom: 8px; }
+    .source-card a {
+      display: inline-block;
+      background: #0f3460;
+      color: #4fc3f7;
+      padding: 4px 12px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 0.8rem;
+    }
+    .source-card a:hover { background: #1a5276; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .badge-free { background: #1b5e20; color: #a5d6a7; }
+    .badge-cn { background: #4a148c; color: #e1bee7; }
+
+    /* --- Main layout --- */
+    .main { display: flex; gap: 20px; flex-wrap: wrap; }
+    .panel {
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .form-panel { flex: 1; min-width: 340px; }
+    .output-panel { flex: 1; min-width: 340px; }
+
+    h2 { color: #81d4fa; margin-bottom: 16px; font-size: 1.1rem; }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .form-row { display: flex; flex-direction: column; gap: 4px; }
+    .form-row.full { grid-column: span 2; }
+    label { font-size: 0.78rem; color: #90a4ae; }
+    input, select, textarea {
+      background: #0d1b2a;
+      border: 1px solid #1e3a5f;
+      border-radius: 6px;
+      color: #e0e0e0;
+      padding: 7px 10px;
+      font-size: 0.85rem;
+      font-family: inherit;
+      width: 100%;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #4fc3f7; }
+    textarea { min-height: 60px; resize: vertical; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; }
+    .stat-row { display: flex; flex-direction: column; gap: 4px; }
+
+    .skills-hint { color: #78909c; font-size: 0.75rem; margin-top: 4px; }
+
+    .btn-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+    button {
+      padding: 9px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: bold;
+      font-family: inherit;
+      transition: opacity 0.2s;
+    }
+    button:hover { opacity: 0.85; }
+    .btn-primary { background: #1565c0; color: #fff; }
+    .btn-success { background: #2e7d32; color: #fff; }
+    .btn-danger  { background: #b71c1c; color: #fff; }
+    .btn-secondary { background: #37474f; color: #fff; }
+
+    #json-output {
+      background: #0d1b2a;
+      border: 1px solid #1e3a5f;
+      border-radius: 8px;
+      padding: 14px;
+      font-family: "Courier New", monospace;
+      font-size: 0.78rem;
+      color: #a5d6a7;
+      white-space: pre;
+      overflow: auto;
+      min-height: 200px;
+      max-height: 440px;
+    }
+
+    /* --- Batch list panel --- */
+    .batch-panel { width: 100%; }
+    #batch-list { list-style: none; padding: 0; margin-top: 10px; }
+    #batch-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #0d1b2a;
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin-bottom: 6px;
+      font-size: 0.84rem;
+    }
+    #batch-list li .name { color: #4fc3f7; font-weight: bold; }
+    #batch-list li .meta { color: #90a4ae; font-size: 0.77rem; }
+    #batch-list li button { padding: 3px 10px; font-size: 0.75rem; }
+
+    .empty-hint { color: #546e7a; font-size: 0.82rem; text-align: center; padding: 20px; }
+
+    .step-guide {
+      background: #0d2137;
+      border-left: 3px solid #4fc3f7;
+      border-radius: 0 8px 8px 0;
+      padding: 14px 18px;
+      margin-bottom: 24px;
+      font-size: 0.83rem;
+      line-height: 1.8;
+      color: #b0bec5;
+    }
+    .step-guide strong { color: #81d4fa; }
+    .step-guide ol { padding-left: 18px; }
+    .step-guide a { color: #4fc3f7; }
+
+    .alert {
+      border-radius: 6px;
+      padding: 8px 14px;
+      margin-top: 10px;
+      font-size: 0.82rem;
+      display: none;
+    }
+    .alert-success { background: #1b5e20; color: #a5d6a7; }
+    .alert-error   { background: #7f0000; color: #ffcdd2; }
+  </style>
+</head>
+<body>
+
+<h1>⚽ 球员数据管理工具</h1>
+<p class="subtitle">从以下网站获取数据，填入表单，批量导出为 JSON 格式</p>
+
+<!-- ========= Data Sources ========= -->
+<div class="sources">
+  <div class="source-card">
+    <h3>PESMaster <span class="badge badge-free">免费</span></h3>
+    <p>最全面的 eFootball 球员数据库，包含总评、位置、国籍、俱乐部、能力值、特殊技能。<br>搜索球员 → 查看 Stats 页面。</p>
+    <a href="https://www.pesmaster.com/efootball-2024/efootball/" target="_blank">访问 pesmaster.com →</a>
+  </div>
+  <div class="source-card">
+    <h3>PES Database <span class="badge badge-free">免费</span></h3>
+    <p>支持按位置、联赛筛选，可导出球员列表。数据覆盖 eFootball 2023/2024。</p>
+    <a href="https://pesdb.net/efootball/" target="_blank">访问 pesdb.net →</a>
+  </div>
+  <div class="source-card">
+    <h3>SoFIFA <span class="badge badge-free">免费</span></h3>
+    <p>EA Sports FC / FIFA 球员数据，含总评、位置、速度、传球等，可作为参考数值。</p>
+    <a href="https://sofifa.com/players" target="_blank">访问 sofifa.com →</a>
+  </div>
+  <div class="source-card">
+    <h3>游民星空 <span class="badge badge-cn">中文</span></h3>
+    <p>国内最全实况足球攻略站，有球员评分、技能、卡包数据整理，中文界面。</p>
+    <a href="https://gl.gamersky.com/handbook/efootball/" target="_blank">访问 gamersky.com →</a>
+  </div>
+  <div class="source-card">
+    <h3>eFootballHub <span class="badge badge-free">免费</span></h3>
+    <p>专注 eFootball 手游数据，有球员卡种类、技能说明、评分对比。</p>
+    <a href="https://efootballhub.net/players" target="_blank">访问 efootballhub.net →</a>
+  </div>
+  <div class="source-card">
+    <h3>Bilibili / 贴吧整理帖 <span class="badge badge-cn">中文</span></h3>
+    <p>B站、贴吧有玩家整理的中文版球员数据帖，适合手游版卡池、技能的中文名称参考。</p>
+    <a href="https://search.bilibili.com/all?keyword=实况足球球员数据" target="_blank">搜索 Bilibili →</a>
+  </div>
+</div>
+
+<!-- ========= How-to guide ========= -->
+<div class="step-guide">
+  <strong>📋 使用步骤：</strong>
+  <ol>
+    <li>前往上方任一数据网站，搜索你需要的球员（如 "Mbappe"）。</li>
+    <li>记录球员的：总评、位置、国籍、俱乐部、年龄、身高、体重、惯用脚、各项能力值、特殊技能。</li>
+    <li>在下方表单中填写，设定稀有度（高光/精选等），点击 <strong>"添加到批量列表"</strong>。</li>
+    <li>添加完所有球员后，点击 <strong>"导出完整 JSON"</strong> 复制导出内容。</li>
+    <li>将导出内容中的 <code>球员</code> 数组粘贴合并到 <code>players_data_complete.json</code> 的 <code>球员</code> 数组末尾。</li>
+  </ol>
+</div>
+
+<!-- ========= Main panels ========= -->
+<div class="main">
+  <!-- Form panel -->
+  <div class="panel form-panel">
+    <h2>➕ 添加球员</h2>
+    <div class="form-grid">
+      <div class="form-row">
+        <label>姓名（中文）</label>
+        <input id="f-name" type="text" placeholder="姆巴佩">
+      </div>
+      <div class="form-row">
+        <label>稀有度</label>
+        <select id="f-rarity">
+          <option value="传奇高光">传奇高光</option>
+          <option value="高光">高光</option>
+          <option value="梦幻精选">梦幻精选</option>
+          <option value="精选" selected>精选</option>
+          <option value="普卡">普卡</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>总评</label>
+        <input id="f-overall" type="number" min="50" max="99" placeholder="92">
+      </div>
+      <div class="form-row">
+        <label>位置</label>
+        <select id="f-position">
+          <option>GK</option>
+          <option>CB</option>
+          <option>RB</option>
+          <option>LB</option>
+          <option>DMF</option>
+          <option>CMF</option>
+          <option>AMF</option>
+          <option>RWF</option>
+          <option>LWF</option>
+          <option>CF</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>国籍</label>
+        <input id="f-nation" type="text" placeholder="法国">
+      </div>
+      <div class="form-row">
+        <label>俱乐部</label>
+        <input id="f-club" type="text" placeholder="巴黎圣日耳曼">
+      </div>
+      <div class="form-row">
+        <label>年龄</label>
+        <input id="f-age" type="number" min="16" max="45" placeholder="25">
+      </div>
+      <div class="form-row">
+        <label>身高 (cm)</label>
+        <input id="f-height" type="number" placeholder="180">
+      </div>
+      <div class="form-row">
+        <label>体重 (kg)</label>
+        <input id="f-weight" type="number" placeholder="75">
+      </div>
+      <div class="form-row">
+        <label>惯用脚</label>
+        <select id="f-foot">
+          <option value="右脚">右脚</option>
+          <option value="左脚">左脚</option>
+          <option value="双脚">双脚</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>球员类型</label>
+        <input id="f-type" type="text" placeholder="速度型 / 得分手 / 创造型">
+      </div>
+      <div class="form-row">
+        <label>战术风格</label>
+        <input id="f-style" type="text" placeholder="深度前锋 / 创造型前腰">
+      </div>
+      <div class="form-row">
+        <label>星级 (1-5)</label>
+        <input id="f-stars" type="number" min="1" max="5" value="5">
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div style="margin-top:14px">
+      <label>能力值</label>
+      <div class="stats-grid">
+        <div class="stat-row"><label>进攻</label><input id="s-atk" type="number" min="1" max="99" placeholder="85"></div>
+        <div class="stat-row"><label>防守</label><input id="s-def" type="number" min="1" max="99" placeholder="30"></div>
+        <div class="stat-row"><label>身体</label><input id="s-phy" type="number" min="1" max="99" placeholder="78"></div>
+        <div class="stat-row"><label>速度</label><input id="s-spd" type="number" min="1" max="99" placeholder="95"></div>
+        <div class="stat-row"><label>传球</label><input id="s-pas" type="number" min="1" max="99" placeholder="82"></div>
+        <div class="stat-row"><label>运球</label><input id="s-dri" type="number" min="1" max="99" placeholder="92"></div>
+      </div>
+    </div>
+
+    <!-- Skills -->
+    <div style="margin-top:14px">
+      <div class="form-row">
+        <label>特殊技能（用逗号分隔）</label>
+        <textarea id="f-skills" placeholder="低空传球, 单触传球, 速度爆发, 马赛回转"></textarea>
+        <span class="skills-hint">参考技能：速度爆发、马赛回转、低空传球、无旋转射门、头球、假动作突破、凌空射门、穿越传球</span>
+      </div>
+    </div>
+
+    <div id="form-alert" class="alert"></div>
+
+    <div class="btn-row">
+      <button class="btn-primary" onclick="addPlayer()">添加到批量列表</button>
+      <button class="btn-secondary" onclick="clearForm()">清空表单</button>
+    </div>
+  </div>
+
+  <!-- Output panel -->
+  <div class="panel output-panel">
+    <h2>📄 JSON 预览</h2>
+    <pre id="json-output">// 添加球员后在此预览 JSON...</pre>
+    <div class="btn-row">
+      <button class="btn-success" onclick="copyJson()">复制 JSON</button>
+      <button class="btn-danger" onclick="clearAll()">清空全部</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========= Batch list ========= -->
+<div class="panel batch-panel" style="margin-top:20px;">
+  <h2>📋 待导入球员列表 (<span id="batch-count">0</span>)</h2>
+  <ul id="batch-list">
+    <li><span class="empty-hint">暂无球员，请先填写表单添加</span></li>
+  </ul>
+  <div class="btn-row" style="margin-top:10px;">
+    <button class="btn-success" onclick="exportJson()">导出完整 JSON（可直接合并到 players_data_complete.json）</button>
+  </div>
+  <div id="export-area" style="display:none; margin-top:14px;">
+    <textarea id="export-text" style="width:100%;height:200px;font-family:monospace;font-size:0.8rem;background:#0d1b2a;color:#a5d6a7;border:1px solid #1e3a5f;border-radius:6px;padding:12px;" readonly></textarea>
+    <button class="btn-secondary" style="margin-top:8px;" onclick="copyExport()">复制导出内容</button>
+  </div>
+</div>
+
+<script>
+const players = [];
+
+const RARITY_STAR_MAP = { '传奇高光': 5, '高光': 5, '梦幻精选': 5, '精选': 4, '普卡': 3 };
+
+function showAlert(id, msg, type) {
+  const el = document.getElementById(id);
+  el.className = 'alert alert-' + type;
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+
+function getVal(id) { return document.getElementById(id).value.trim(); }
+function getInt(id) { return parseInt(document.getElementById(id).value) || 0; }
+
+function addPlayer() {
+  const name = getVal('f-name');
+  if (!name) { showAlert('form-alert', '请输入球员姓名', 'error'); return; }
+  const overall = getInt('f-overall');
+  if (overall < 50 || overall > 99) { showAlert('form-alert', '总评请填写 50-99 之间的数字', 'error'); return; }
+
+  const skillsRaw = getVal('f-skills');
+  const skills = skillsRaw ? skillsRaw.split(/[,，]/).map(s => s.trim()).filter(Boolean) : [];
+
+  const rarity = getVal('f-rarity');
+  const player = {
+    姓名: name,
+    稀有度: rarity,
+    总评: overall,
+    位置: getVal('f-position'),
+    国籍: getVal('f-nation') || '未知',
+    俱乐部: getVal('f-club') || '未知',
+    年龄: getInt('f-age') || 25,
+    身高: getInt('f-height') || 180,
+    体重: getInt('f-weight') || 75,
+    惯用脚: getVal('f-foot'),
+    能力值: {
+      进攻: getInt('s-atk'),
+      防守: getInt('s-def'),
+      身体: getInt('s-phy'),
+      速度: getInt('s-spd'),
+      传球: getInt('s-pas'),
+      运球: getInt('s-dri')
+    },
+    特殊技能: skills,
+    战术风格: getVal('f-style') || '通用',
+    球员类型: getVal('f-type') || '均衡型',
+    星级: getInt('f-stars') || RARITY_STAR_MAP[rarity] || 3
+  };
+
+  players.push(player);
+  updateBatchList();
+  updateJsonPreview(player);
+  showAlert('form-alert', `✅ 已添加：${name} (${rarity} ${overall}分)`, 'success');
+}
+
+function updateBatchList() {
+  const ul = document.getElementById('batch-list');
+  document.getElementById('batch-count').textContent = players.length;
+  if (players.length === 0) {
+    ul.innerHTML = '<li><span class="empty-hint">暂无球员，请先填写表单添加</span></li>';
+    return;
+  }
+  ul.innerHTML = players.map((p, i) => `
+    <li>
+      <div>
+        <span class="name">${p.姓名}</span>
+        <span class="meta"> &nbsp;${p.位置} · ${p.稀有度} · ${p.总评}分 · ${p.俱乐部}</span>
+      </div>
+      <button class="btn-danger" onclick="removePlayer(${i})">删除</button>
+    </li>`).join('');
+}
+
+function removePlayer(i) {
+  players.splice(i, 1);
+  updateBatchList();
+  if (players.length > 0) updateJsonPreview(players[players.length - 1]);
+  else document.getElementById('json-output').textContent = '// 批量列表已清空';
+}
+
+function updateJsonPreview(player) {
+  document.getElementById('json-output').textContent = JSON.stringify(player, null, 2);
+}
+
+function clearForm() {
+  ['f-name','f-nation','f-club','f-type','f-style','f-skills'].forEach(id => document.getElementById(id).value = '');
+  ['f-overall','f-age','f-height','f-weight'].forEach(id => document.getElementById(id).value = '');
+  ['s-atk','s-def','s-phy','s-spd','s-pas','s-dri'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-stars').value = 5;
+}
+
+function clearAll() {
+  if (!confirm('确定清空所有已添加的球员？')) return;
+  players.length = 0;
+  updateBatchList();
+  document.getElementById('json-output').textContent = '// 已清空';
+  document.getElementById('export-area').style.display = 'none';
+}
+
+function copyJson() {
+  const text = document.getElementById('json-output').textContent;
+  navigator.clipboard.writeText(text).then(() => alert('已复制到剪贴板！')).catch(() => alert('复制失败，请手动选中文本复制'));
+}
+
+function exportJson() {
+  if (players.length === 0) { alert('请先添加至少一名球员'); return; }
+  const output = JSON.stringify(players, null, 2);
+  document.getElementById('export-text').value = output;
+  document.getElementById('export-area').style.display = 'block';
+  document.getElementById('export-text').scrollIntoView({ behavior: 'smooth' });
+}
+
+function copyExport() {
+  const el = document.getElementById('export-text');
+  el.select();
+  navigator.clipboard.writeText(el.value)
+    .then(() => alert('已复制！将数组内容粘贴到 players_data_complete.json 的 "球员" 数组末尾即可。'))
+    .catch(() => {
+      // Fallback for browsers without clipboard permission
+      el.select();
+      alert('请手动按 Ctrl+C (Windows) / ⌘+C (Mac) 复制，或授权浏览器剪贴板权限后重试。');
+    });
+}
+</script>
+</body>
+</html>

@@ -12,8 +12,9 @@
 |------|------|
 | `index.html` | 主页面，包含全部 UI、CSS 样式与内联 JavaScript 逻辑 （约 3985 行） |
 | `card-system.js` | 独立的抽卡系统 JS 类（`PESCardSystem`），可复用于其他项目 |
-| `players_data_complete.json` | 球员数据库，包含卡池配置与球员属性 |
-| `server.js` | Node.js REST API 服务器（无需安装依赖） |
+| `players_data_complete.json` | 球员数据库，包含卡池配置与球员属性（77 名球员） |
+| `tools/player-import.html` | 球员数据管理工具，可视化表单帮助从数据网站导入新球员 |
+| `server.js` | Node.js REST API 服务器（无需安装依赖，仅本地开发使用） |
 | `package.json` | 项目元数据与 `npm start` 启动脚本 |
 | `bgm/` | 背景音乐文件夹（24 首 BGM） |
 | `鼓掌欢呼声音效.mp3` | 抽卡成功时的欢呼音效 |
@@ -96,6 +97,26 @@ curl -X PUT http://localhost:3000/api/players/0 \
 curl -X DELETE http://localhost:3000/api/players/46
 ```
 
+## 球员数据来源
+
+本项目的球员数据可从以下网站获取，然后通过 `tools/player-import.html` 整理导入：
+
+| 网站 | 链接 | 说明 |
+|------|------|------|
+| **PESMaster** | https://www.pesmaster.com/efootball-2024/efootball/ | 最全面的 eFootball 球员数据库，含总评、位置、技能，**推荐首选** |
+| **PES Database** | https://pesdb.net/efootball/ | 支持按位置/联赛筛选，可批量查看球员评分 |
+| **SoFIFA** | https://sofifa.com/players | EA Sports FC / FIFA 数据，能力值结构与本项目类似，可作参考 |
+| **eFootballHub** | https://efootballhub.net/players | 专注 eFootball 手游的卡包与技能数据 |
+| **游民星空** | https://gl.gamersky.com/handbook/efootball/ | 中文实况足球攻略站，有球员评分与技能中文名称 |
+| **Bilibili 整理帖** | https://search.bilibili.com/all?keyword=实况足球球员数据 | B站玩家整理的中文版数据帖，适合手游卡池参考 |
+
+### 数据导入工具
+
+打开 `tools/player-import.html`（双击或用浏览器打开）即可使用可视化表单：
+1. 在上方网站查找球员数据
+2. 填写表单（姓名、稀有度、总评、能力值、技能等）
+3. 批量导出 JSON，粘贴到 `players_data_complete.json` 的 `球员` 数组末尾
+
 ## 技术栈
 
 - 纯 HTML5 + CSS3 + 原生 JavaScript（无框架依赖）
@@ -109,4 +130,4 @@ curl -X DELETE http://localhost:3000/api/players/46
 `players_data_complete.json` 包含：
 - **卡池系统**：4 种卡池的消耗规则与概率配置
 - **解约奖励**：不同稀有度球员解约后返还的卷数
-- **球员**：40+ 名球员数据，涵盖梅西、C罗、姆巴佩等世界顶级球星及中超球员，每位球员包含总评、位置、国籍、俱乐部、六维能力值及特殊技能
+- **球员**：77 名球员数据，涵盖梅西、C罗、姆巴佩等世界顶级球星及中超球员，每位球员包含总评、位置、国籍、俱乐部、六维能力值及特殊技能
