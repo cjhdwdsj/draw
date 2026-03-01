@@ -89,15 +89,37 @@ function serveStatic(req, res, pathname) {
         res.end('Forbidden');
         return;
     }
-    fs.readFile(filePath, (err, content) => {
-        if (err) {
-            res.writeHead(404);
-            res.end('Not Found');
+    fs.stat(filePath, (statErr, stats) => {
+        if (statErr || !stats.isFile()) {
+            if (statErr && statErr.code !== 'ENOENT') {
+                res.writeHead(500);
+                res.end('Internal Server Error');
+            } else {
+                res.writeHead(404);
+                res.end('Not Found');
+            }
             return;
         }
         const ext = path.extname(filePath);
-        res.writeHead(200, { 'Content-Type': MIME_TYPES[ext] || 'application/octet-stream' });
-        res.end(content);
+        const headers = {
+            'Content-Type': MIME_TYPES[ext] || 'application/octet-stream'
+        };
+        if (typeof stats.size === 'number') {
+            headers['Content-Length'] = stats.size;
+        }
+        res.writeHead(200, headers);
+        const stream = fs.createReadStream(filePath);
+        stream.on('error', (streamErr) => {
+            // 如果在开始传输前出错，返回 500
+            if (!res.headersSent) {
+                res.writeHead(500);
+                res.end('Internal Server Error');
+            } else {
+                // 传输过程中出错，终止连接
+                res.destroy(streamErr);
+            }
+        });
+        stream.pipe(res);
     });
 }
 
