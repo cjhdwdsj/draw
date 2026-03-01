@@ -82,10 +82,10 @@ const MIME_TYPES = {
 };
 
 function serveStatic(req, res, pathname) {
-    const filePath = path.join(__dirname, pathname === '/' ? 'index.html' : pathname);
+    const relativePath = pathname === '/' ? 'index.html' : '.' + pathname;
+    const filePath = path.resolve(__dirname, relativePath);
     // 防止路径穿越及目录遍历
     if (!filePath.startsWith(__dirname + path.sep) || filePath === __dirname) {
-        res.writeHead(403);
         res.end('Forbidden');
         return;
     }
